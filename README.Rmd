@@ -3,4 +3,4 @@ title: "csdmisc"
 output: github_document
 ---
 
-My personal R package.
+`csdmisc` is my personal R package containing various miscellaneous functions.

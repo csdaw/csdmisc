@@ -1,4 +1,5 @@
 csdmisc
 ================
 
-My personal R package.
+`csdmisc` is my personal R package containing various miscellaneous
+functions.
