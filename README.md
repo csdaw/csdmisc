@@ -1,2 +1,4 @@
-# csdmisc
-My personal R package
+csdmisc
+================
+
+My personal R package.
