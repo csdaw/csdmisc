@@ -44,6 +44,9 @@ filter_x <- function(data, x = c("na", "zero", "sum"),
     # recycle arguments to length of longest
     recycled_args <- lapply(args, rep, length.out = max_arg_len)
 
+    # allocate list to hold results
+    rows_to_keep <- vector(mode = "list", length = max_arg_len)
+
     # loop over recycled arguments
     for (i in seq_len(max_arg_len)) {
       rows_to_keep[[i]] <- rowsum2(data, x, recycled_args[[1]][i], recycled_args[[2]][i], recycled_args[[3]][i], ...)
