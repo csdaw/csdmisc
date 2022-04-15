@@ -2,3 +2,4 @@
 
 export(match_id)
 export(match_id_)
+export(rowsum2)
