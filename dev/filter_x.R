@@ -8,28 +8,36 @@ e_data <- matrix(
   dimnames = list(c("A", "B", "C"), c("sample1", "sample2"))
 )
 
+<<<<<<< HEAD
 rowsum2 <- function(x, type = c("na", "zero", "sum"),
+=======
+rowsum2 <- function(data, x = c("na", "zero", "sum"),
+>>>>>>> origin
                     pattern, op = c("==", "<=", "<", ">=", ">", "!="), value, ...) {
   # check arguments
+  if (!any(class(data) %in% c("data.frame", "matrix")))
+    stop("data must be a data.frame or a matrix")
+  match.arg(x)
+  stopifnot(is.character(pattern))
   match.arg(op)
-  match.arg(type)
+  stopifnot(is.numeric(value))
+
+  # get colnames
+  coln <- colnames(data)
 
   # get number of NA/zero, or sum of values in column group
-  if (type == "na") {
-    test_values <- apply(
-      X = is.na(x[, c(grep(pattern = pattern, x = colnames(x), ...)), drop = FALSE]),
-      MARGIN = 1,
-      FUN = sum
-    )
-  } else if (type == "zero") {
-    test_values <- apply(
-      X = x[, c(grep(pattern = pattern, x = colnames(x), ...)), drop = FALSE],
-      MARGIN = 1,
-      FUN = function(y) sum(y == 0, na.rm = TRUE)
-    )
-  } else if (type == "sum") {
+  if (x == "na") {
     test_values <- rowSums(
-      x = x[, c(grep(pattern = pattern, x = colnames(x), ...)), drop = FALSE],
+      is.na(data[, grep(pattern = pattern, x = coln, ...), drop = FALSE])
+    )
+  } else if (x == "zero") {
+    test_values <- rowSums(
+      data[, grep(pattern = pattern, x = coln, ...), drop = FALSE] == 0,
+      na.rm = TRUE
+    )
+  } else if (x == "sum") {
+    test_values <- rowSums(
+      data[, grep(pattern = pattern, x = coln, ...), drop = FALSE],
       na.rm = TRUE
     )
   }
@@ -77,6 +85,125 @@ microbenchmark::microbenchmark(
   filter_x(e_data, "sum", "sample", ">", 3),
   filterNA(e_data, pNA = 0, pattern = "01"),
   times = 1000L
+)
+
+filter_x <- function(data, x = c("na", "zero", "sum"),
+                     pattern, op, value, setop = c("&", "|", "xor"), ...) {
+  # check arguments
+  if (!any(class(data) %in% c("data.frame", "matrix")))
+    stop("data must be a data.frame or a matrix")
+  match.arg(x)
+  stopifnot(is.character(pattern))
+  stopifnot(is.character(op))
+  stopifnot(is.numeric(value))
+  match.arg(setop)
+
+  # check argument lengths
+  args <- list(pattern, op, value)
+  max_arg_len <- max(lengths(args))
+
+  if (max_arg_len > 1) {
+    # recycle arguments to length of longest
+    recycled_args <- lapply(args, rep, length.out = max_arg_len)
+
+    # allocate list to hold results
+    rows_to_keep <- vector(mode = "list", length = max_arg_len)
+
+    # loop over recycled arguments
+    for (i in seq_len(max_arg_len)) {
+      rows_to_keep[[i]] <- rowsum2(data, x, recycled_args[[1]][i], recycled_args[[2]][i], recycled_args[[3]][i], ...)
+    }
+
+    # output x with only rows of interest
+    data[Reduce(setop, rows_to_keep), ]
+
+  } else {
+    # output x with only rows of interest
+    data[rowsum2(data, x, pattern, op, value, ...), ]
+  }
+}
+
+filter_x <- function(data, x = c("na", "zero", "sum"),
+                     pattern, op, value, setop = c("&", "|", "xor"), ...) {
+  # check arguments
+  if (!any(class(data) %in% c("data.frame", "matrix")))
+    stop("data must be a data.frame or a matrix")
+  match.arg(x)
+  stopifnot(is.character(pattern))
+  stopifnot(is.character(op))
+  stopifnot(is.numeric(value))
+  match.arg(setop)
+
+  # check argument lengths
+  args <- list(pattern, op, value)
+  max_arg_len <- max(lengths(args))
+
+  if (max_arg_len > 1) {
+    rows_to_keep <- mapply(
+      function(p, o, v) {
+        rowsum2(data, x, p, o, v, ...)
+      },
+      pattern,
+      op,
+      value,
+      SIMPLIFY = FALSE
+    )
+
+    data[Reduce(setop, rows_to_keep), ]
+
+  } else {
+    data[rowsum2(data, x, pattern, op, value, ...), ]
+  }
+}
+
+library(MSnbase)
+
+e_data <- data.frame(
+  "sample1" = sample(0:20, 100000L, replace = TRUE),
+  "sample2" = sample(0:20, 100000L, replace = TRUE)
+) %>%
+  as.matrix()
+
+microbenchmark::microbenchmark(
+  filter_x(e_data, "sum", c("sample1", "sample2"), "==", 1:5, "|"),
+  filterNA(e_data, pNA = 0, pattern = "01"),
+  times = 100L
+)
+
+
+
+
+
+patterns <- c("sample", "sample2")
+values <- c(1, 3, 4, 6, 7)
+
+my_fun <- function(p, v) {
+  args <- list(p, v)
+  max_len <- max(lengths(args))
+  out <- lapply(args, rep, length.out = max_len)
+  out
+}
+
+my_fun(patterns, values)
+
+aaa <- vector(mode = "list", length = 2)
+
+for (i in seq_along(patterns)) {
+  aaa[[i]] <- filter_x(e_data, "sum", patterns[i], "==", values[i])
+}
+
+e_data[Reduce("|", aaa), ]
+
+aaa <- filter_x(e_data, "sum", "sample1", ">", 0)
+bbb <- filter_x(e_data, "sum", "sample2", "<", 5)
+
+ccc <- mapply(
+  FUN = function(p, o, v) filter_x(e_data, "sum", p, o, v),
+  c("sample1", "sample2"),
+  c(">", "<"),
+  c(0, 5),
+  SIMPLIFY = FALSE,
+  USE.NAMES = FALSE
 )
 
 microbenchmark::microbenchmark(
