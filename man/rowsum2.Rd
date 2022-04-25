@@ -9,7 +9,7 @@ rowsum2(data, x = c("na", "zero", "sum"), op, value, pattern, ...)
 \arguments{
 \item{data}{\code{data.frame} or \code{matrix}.}
 
-\item{x}{\code{string} summation method, one of either: \code{"na"}, \code{"zero"}, or \code{"sum"}.}
+\item{x}{\code{string} method, one of either: \code{"na"}, \code{"zero"}, or \code{"sum"}.}
 
 \item{op}{Optional \code{string} describing operator to use for comparing row sums
 to a desired value. One of either: \code{"=="}, \code{"!="}, \code{"<="}, \code{">="}, \code{"<"}, \code{">"}.}
@@ -26,9 +26,9 @@ Returns a \code{logical} vector if 'op' and 'value' have been specified.
 Otherwise returns a \code{numeric} vector.
 }
 \description{
-Count the sum of values, zero, or \code{NA} in the each row of a
-data.frame or matrix. Optionally count only certain columns and/or compare
-the row sums to a desired value.
+Count the sum of values, sum of zeros, or sum of \code{NA}s in the
+each row of a data.frame or matrix. Optionally count only certain columns
+and/or compare the row sums to a desired value.
 }
 \examples{
 mat <- matrix(c(NA, 1:6, 0), nrow = 4, ncol = 2,

@@ -1,11 +1,11 @@
 #' Flexible summation of matrix/data.frame rows
 #'
-#' @description Count the sum of values, zero, or `NA` in the each row of a
-#' data.frame or matrix. Optionally count only certain columns and/or compare
-#' the row sums to a desired value.
+#' @description Count the sum of values, sum of zeros, or sum of `NA`s in the
+#' each row of a data.frame or matrix. Optionally count only certain columns
+#' and/or compare the row sums to a desired value.
 #'
 #' @param data `data.frame` or `matrix`.
-#' @param x `string` summation method, one of either: `"na"`, `"zero"`, or `"sum"`.
+#' @param x `string` method, one of either: `"na"`, `"zero"`, or `"sum"`.
 #' @param op Optional `string` describing operator to use for comparing row sums
 #' to a desired value. One of either: `"=="`, `"!="`, `"<="`, `">="`, `"<"`, `">"`.
 #' @param value Optional `numeric` value to compare the row sums against.
@@ -51,13 +51,17 @@ rowsum2 <- function(data, x = c("na", "zero", "sum"),
     stop("data must be a data.frame or a matrix")
   match.arg(x)
   if (!missing(op)) match.arg(op, choices = c("==", "!=", "<=", ">=", "<", ">"))
-  if (!missing(value))
+  if (!missing(value)) {
     if(!is.numeric(value)) stop("'value' must be numeric")
+    if(length(value) > 1) warning("argument 'value' has length > 1 and only the first element will be used")
+  }
 
   # get colnames if pattern isn't missing
   if (!missing(pattern)) {
     if(is.null(colnames(data))) stop("'data' must have colnames if 'pattern' is used")
-    cols <- grep(pattern = pattern, x = colnames(data), ...)
+    if(length(pattern) > 1) warning("argument 'pattern' has length > 1 and only the first element will be used")
+
+    cols <- grep(pattern = pattern[1], x = colnames(data), ...)
   } else {
     cols <- seq_len(ncol(data))
   }
@@ -84,7 +88,7 @@ rowsum2 <- function(data, x = c("na", "zero", "sum"),
     op <- match.fun(op)
 
     # compare calculated values versus the desired value
-    op(test_values, value)
+    op(test_values, value[1])
   } else {
     # output just the sums
     test_values

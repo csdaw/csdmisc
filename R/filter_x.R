@@ -1,10 +1,10 @@
 #' Flexible filtering of matrix/data.frames
 #'
-#' @description Filter a matrix or data.frame based on the sum of values, zero,
-#' or `NA` in each row. Optionally filter based on only certain columns.
-#' Also optionally perform multiple filtering steps on different sets of columns,
-#' wherein the function is vectorised over `op`, and `value`, and `pattern`
-#' (see examples).
+#' @description Filter a matrix or data.frame based on the sum of values, sum
+#' of zeros, or sum of `NA`s in each row. Optionally filter based on only
+#' certain columns. Also optionally perform multiple filtering steps on
+#' different sets of columns, wherein the function is vectorised over `op`,
+#' and `value`, and `pattern` (see examples).
 #'
 #' @inheritParams rowsum2
 #' @param op `string` or `character` vector describing operator to use for
@@ -17,13 +17,43 @@
 #' returned by multiple filtering steps. This must be specified if using a
 #' vector for `op`, `value`, or `pattern`.
 #'
-#' @return Returns `data` with the rows not matching the specified condition(s)
-#' removed.
+#' @return Returns `data` containing only the rows matching the
+#' specified condition(s).
 #'
 #' @export
 #'
 #' @examples
-#' # need to add some examples
+#' mat <- matrix(c(NA, 1:10, 0), nrow = 4, ncol = 3,
+#' dimnames = list(NULL, c("sample1", "sample2", "sample3")))
+#'
+#' df <- data.frame(mat)
+#'
+#' # works with data.frame or matrix
+#' filter_x(
+#'   data = mat,
+#'   x = "na",
+#'   op = "==",
+#'   value = 0
+#' )
+#' filter_x(
+#'   data = df,
+#'   x = "na",
+#'   op = "==", value = 0
+#' )
+#'
+#' # filter based on sum, sum of NA, or sum of zeros
+#' filter_x(mat, "na", ">=", 1)
+#' filter_x(mat, "sum", ">", 5)
+#' filter_x(mat, "zero", "==", 1)
+#'
+#' # perform multiple filtering steps at the same time
+#' # using column name pattern matching, the results being combined with 'setop'
+#' # ('setop' can be &, |, xor which corresponds to AND, OR, SYMMETRIC DIFFERENCE)
+#' # (you can supply multiple 'op', 'value', and 'pattern' values in a vector)
+#' filter_x(mat, "sum", ">", c(4, 12), c("sample[1-2]", "sample[2-3]"), setop = "&")
+#' filter_x(mat, "sum", ">", c(4, 12), c("sample[1-2]", "sample[2-3]"), setop = "|")
+#' filter_x(mat, "sum", ">", c(4, 12), c("sample[1-2]", "sample[2-3]"), setop = "xor")
+#'
 filter_x <- function(data, x = c("na", "zero", "sum"),
                      op = c("==", "!=", "<=", ">=", "<", ">"),
                      value, pattern, ..., setop) {
@@ -34,12 +64,12 @@ filter_x <- function(data, x = c("na", "zero", "sum"),
   match.arg(op, several.ok = TRUE)
   if(!is.numeric(value)) stop("'value' must be numeric")
 
+  # check argument lengths
+  if (!missing(pattern)) args <- list(op, value, pattern) else args <- list(op, value)
+  max_arg_len <- max(lengths(args))
+
   if (!missing(setop)) {
     match.arg(setop, c("&", "|", "xor"))
-
-    # check argument lengths
-    args <- list(op, value, pattern)
-    max_arg_len <- max(lengths(args))
 
     # recycle arguments to length of longest
     recycled_args <- lapply(args, rep, length.out = max_arg_len)
@@ -56,6 +86,8 @@ filter_x <- function(data, x = c("na", "zero", "sum"),
     data[Reduce(setop, rows_to_keep), , drop = FALSE]
 
   } else {
+    if (max_arg_len > 1) warning("Some arguments have length > 1 but 'setop' is missing. You should specify 'setop'")
+
     data[rowsum2(data, x, op, value, pattern, ...), , drop = FALSE]
   }
 }

@@ -17,7 +17,7 @@ filter_x(
 \arguments{
 \item{data}{\code{data.frame} or \code{matrix}.}
 
-\item{x}{\code{string} summation method, one of either: \code{"na"}, \code{"zero"}, or \code{"sum"}.}
+\item{x}{\code{string} method, one of either: \code{"na"}, \code{"zero"}, or \code{"sum"}.}
 
 \item{op}{\code{string} or \code{character} vector describing operator to use for
 comparing row sums to a desired value.
@@ -35,16 +35,46 @@ returned by multiple filtering steps. This must be specified if using a
 vector for \code{op}, \code{value}, or \code{pattern}.}
 }
 \value{
-Returns \code{data} with the rows not matching the specified condition(s)
-removed.
+Returns \code{data} containing only the rows matching the
+specified condition(s).
 }
 \description{
-Filter a matrix or data.frame based on the sum of values, zero,
-or \code{NA} in each row. Optionally filter based on only certain columns.
-Also optionally perform multiple filtering steps on different sets of columns,
-wherein the function is vectorised over \code{op}, and \code{value}, and \code{pattern}
-(see examples).
+Filter a matrix or data.frame based on the sum of values, sum
+of zeros, or sum of \code{NA}s in each row. Optionally filter based on only
+certain columns. Also optionally perform multiple filtering steps on
+different sets of columns, wherein the function is vectorised over \code{op},
+and \code{value}, and \code{pattern} (see examples).
 }
 \examples{
-# need to add some examples
+mat <- matrix(c(NA, 1:10, 0), nrow = 4, ncol = 3,
+dimnames = list(NULL, c("sample1", "sample2", "sample3")))
+
+df <- data.frame(mat)
+
+# works with data.frame or matrix
+filter_x(
+  data = mat,
+  x = "na",
+  op = "==",
+  value = 0
+)
+filter_x(
+  data = df,
+  x = "na",
+  op = "==", value = 0
+)
+
+# filter based on sum, sum of NA, or sum of zeros
+filter_x(mat, "na", ">=", 1)
+filter_x(mat, "sum", ">", 5)
+filter_x(mat, "zero", "==", 1)
+
+# perform multiple filtering steps at the same time
+# using column name pattern matching, the results being combined with 'setop'
+# ('setop' can be &, |, xor which corresponds to AND, OR, SYMMETRIC DIFFERENCE)
+# (you can supply multiple 'op', 'value', and 'pattern' values in a vector)
+filter_x(mat, "sum", ">", c(4, 12), c("sample[1-2]", "sample[2-3]"), setop = "&")
+filter_x(mat, "sum", ">", c(4, 12), c("sample[1-2]", "sample[2-3]"), setop = "|")
+filter_x(mat, "sum", ">", c(4, 12), c("sample[1-2]", "sample[2-3]"), setop = "xor")
+
 }
